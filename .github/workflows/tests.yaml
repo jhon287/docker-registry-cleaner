@@ -40,6 +40,8 @@ jobs:
         run: pip install pytest coverage
 
       - name: Run Unit Testing
+        env:
+          PYTHONPATH: src/
         run: coverage run -m pytest -v
 
       - name: Check Coverage
