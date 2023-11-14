@@ -47,14 +47,14 @@ jobs:
       - name: Check Coverage
         id: coverage
         continue-on-error: true
-        run: coverage report -m --fail-under ${{ inputs.coverage_min }} main.py
+        run: coverage report -m --fail-under ${{ inputs.coverage_min }} --include "src/*"
 
       - name: Coverage Result
         run: |
           if [ "${{ steps.coverage.outcome }}" == "failure" ]
           then
-            echo "::warning::BNPPF code coverage NOK 💀 (<${{ inputs.coverage_min }}%)"
+            echo "::warning::Code coverage NOK 💀 (<${{ inputs.coverage_min }}%)"
             exit 1
           else
-            echo "::notice::BNPPF code coverage OK 🎉 (>${{ inputs.coverage_min }}%)"
+            echo "::notice::Code coverage OK 🎉 (>${{ inputs.coverage_min }}%)"
           fi
