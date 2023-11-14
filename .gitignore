@@ -1,0 +1,5 @@
+certs/
+!tests/certs/
+.coverage
+__pycache__
+.pytest_cache
