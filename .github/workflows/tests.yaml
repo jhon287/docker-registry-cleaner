@@ -36,9 +36,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install Needed Python Libraries
-        run: pip install --no-cache-dir -r requirements.txt
-
       - name: Install Pytest And Coverage
         run: pip install pytest coverage
 
