@@ -1,0 +1,37 @@
+---
+name: Docker Registry Cleaner Syntax Checks
+
+on:
+  workflow_call:
+
+permissions: read-all
+
+jobs:
+  syntax:
+    name: Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Commitlint
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          failOnWarnings: true
+
+      - name: Install YAMLlint PyLint, Flake8 And Black
+        run: pip install --user yamllint pylint flake8 black
+
+      - name: Run YAMLlint
+        run: yamllint --strict .
+
+      - name: Run Flake8
+        run: flake8 .
+
+      - name: Run PyLint
+        id: pylint
+        run: pylint --recursive yes .
+
+      - name: Run Black
+        run: black --check --diff --color .
