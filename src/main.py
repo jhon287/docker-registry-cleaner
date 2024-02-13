@@ -1,8 +1,9 @@
 """Docker Registry Cleaner Main"""
 
+import sys
 from docker_registry_client import DockerRegistryClient
 from logger import logger
-from utils import str2bool, is_valid_url, check_pattern, get_percentage
+from utils import is_valid_url, get_percentage, is_dangerous_regex, str2bool
 import config
 
 
@@ -40,7 +41,11 @@ def main() -> None:
         "tags": config.DOCKER_TAGS_FILTER,
     }.items():
         logger.info(msg=f"🧐 Checking filter ({kind=} ({pattern=})")
-        check_pattern(pattern=pattern, force=str2bool(config.FORCE))
+        if is_dangerous_regex(pattern=pattern):
+            logger.info(msg=f"Dangerous filter regex pattern detected: '{pattern}'")
+            if not config.FORCE and not str2bool(string=input("Are you sure? (y/n): ")):
+                logger.info(msg="Exit...")
+                sys.exit(0)
 
     client = DockerRegistryClient(
         registry_url=config.DOCKER_REGISTRY_URL,
@@ -83,6 +88,7 @@ def main() -> None:
                 logger.warning(
                     msg=f"❌ Error: cannot get digest for Docker image '{image_tag}"
                 )
+                image_tags_failed.append(f"{image_tag}")
                 continue
 
             (name, tag) = image_tag.split(":")
@@ -91,7 +97,7 @@ def main() -> None:
                 f"🔫 Deleting Docker image '{name}:{tag}' using digest '{digest}'"
             )
 
-            if str2bool(string=config.DRY_RUN):
+            if config.DRY_RUN:
                 logger.info(msg=f"{message} (DRY-RUN)")
                 continue
 
