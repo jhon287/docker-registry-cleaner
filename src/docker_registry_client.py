@@ -28,7 +28,7 @@ class DockerRegistryClient:
 
         parse_result: ParseResult = urlparse(url=registry_url)
 
-        self.registry_host: str = parse_result.hostname
+        self.registry_host: str = parse_result.hostname if parse_result.hostname else ""
         self.registry_port: int = parse_result.port if parse_result.port else 443
         self.registry_path = parse_result.path
 
@@ -67,16 +67,18 @@ class DockerRegistryClient:
 
     def __request_get_header_value(
         self, url: str, headers: dict[str, str], header_name: str
-    ) -> Optional[str]:
+    ) -> str | None:
         self.https_connection.request(method="HEAD", url=url, headers=headers)
         response: HTTPResponse = self.https_connection.getresponse()
         if response.status != 200:
+            # Avoid http.client.ResponseNotReady: Request-sent
+            _ = response.read()
             # Raise HTTPException
             raise HTTPException(
                 "Received HTTP code != 200: "
                 f"{response.status} -> {response.reason} ({url=})"
             )
-        value: str = response.getheader(name=header_name)
+        value: str | None = response.getheader(name=header_name)
         # Avoid http.client.ResponseNotReady: Request-sent
         _ = response.read()
         return value if value is not None else ""
@@ -100,7 +102,7 @@ class DockerRegistryClient:
             return []
         return [f"{image}:{tag}" for tag in tags if search(pattern=pattern, string=tag)]
 
-    def get_image_tag_digest(self, image_tag: str) -> Optional[str]:
+    def get_image_tag_digest(self, image_tag: str) -> str | None:
         """Method that returns Docker image digest"""
 
         try:
@@ -108,13 +110,26 @@ class DockerRegistryClient:
         except ValueError:
             image: str = image_tag
             tag: str = "latest"
+
         url: str = f"/v2/{image}/manifests/{tag}"
-        headers: dict[str, str] = {
-            "Accept": "application/vnd.docker.distribution.manifest.v2+json"
-        }
-        return self.__request_get_header_value(
-            url=url, headers=headers, header_name="Docker-Content-Digest"
-        )
+
+        try:
+            return self.__request_get_header_value(
+                url=url,
+                headers={
+                    "Accept": "application/vnd.docker.distribution.manifest.v2+json"
+                },
+                header_name="Docker-Content-Digest",
+            )
+        except HTTPException:
+            try:
+                return self.__request_get_header_value(
+                    url=url,
+                    headers={"Accept": "application/vnd.oci.image.manifest.v1+json"},
+                    header_name="Docker-Content-Digest",
+                )
+            except HTTPException:
+                return None
 
     def delete_image(self, image: str, digest: str) -> bool:
         """Method that delete a Docker image using digest"""

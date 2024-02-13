@@ -14,7 +14,7 @@ docker_image_tag_fake_digest: str = sha256(b"Pouet").hexdigest()
 class FakeHTTPSConnection:
     """FakeHTTPSConnection Class"""
 
-    def __init__(self, status: int = 200, headers: dict[str, str] = None):
+    def __init__(self, status: int = 200, headers: dict[str, str] | None = None):
         self.status = status
         self.headers = headers if headers else {}
 
@@ -52,7 +52,7 @@ class FakeHTTPResponse:  # pylint: disable=too-few-public-methods
     def __to_json(self, obj: Any) -> str:
         return dumps(obj=obj)
 
-    def read(self) -> dict[str, Any]:
+    def read(self) -> str:
         """FakeHTTPResponse Read Method"""
 
         # Get Docker images
@@ -212,15 +212,18 @@ class DockerRegistryClientTests(TestCase):
         target="docker_registry_client.HTTPSConnection",
         new=MagicMock(return_value=FakeHTTPSConnection(status=404)),
     )
-    def test_get_image_tag_digest_404(self):
+    def test_get_image_tag_digest_not_found(self):
         """Docker Client Get Image Tag Digest (404 Not Found)"""
 
         my_fake_docker_registry_client: DockerRegistryClient = DockerRegistryClient(
             registry_url="https://fake.registry.example.com:12345/"
         )
 
-        with self.assertRaises(expected_exception=HTTPException):
-            my_fake_docker_registry_client.get_image_tag_digest(image_tag="fake-ubuntu")
+        self.assertIsNone(
+            obj=my_fake_docker_registry_client.get_image_tag_digest(
+                image_tag="fake-ubuntu"
+            )
+        )
 
     @patch(
         target="docker_registry_client.HTTPSConnection",

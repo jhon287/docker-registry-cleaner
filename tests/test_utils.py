@@ -6,7 +6,6 @@ from utils import (
     str2bool,
     is_valid_url,
     is_dangerous_regex,
-    check_pattern,
     get_percentage,
 )
 
@@ -27,7 +26,7 @@ class TestUtils(TestCase):
 
         self.assertEqual(first=True, second=is_valid_url(url="https://example.com"))
         self.assertEqual(first=False, second=is_valid_url(url="http://example.com"))
-        self.assertEqual(first=False, second=is_valid_url(url=None))
+        self.assertEqual(first=False, second=is_valid_url(url=""))
 
     def test_is_dangerous_regex(self):
         """Test Dangerous Regex Pattern Detection Function"""
@@ -37,16 +36,11 @@ class TestUtils(TestCase):
             first=False, second=is_dangerous_regex(pattern="^release/docker/my-poc")
         )
 
-    def test_check_pattern(self):
-        """Test Check Pattern Function"""
-
-        check_pattern(pattern=".*", force=True)
-
     def test_get_percentage(self):
         """Test Get Percentage Function"""
 
-        numbers_1: list[int] = [randrange(1, 100) for i in range(10)]
-        numbers_2: list[int] = [randrange(1, 100) for i in range(10)]
+        numbers_1: list[int] = [randrange(1, 100) for _ in range(10)]
+        numbers_2: list[int] = [randrange(1, 100) for _ in range(10)]
 
         for number_1 in numbers_1:
             for number_2 in numbers_2:
